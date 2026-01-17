@@ -1,4 +1,3 @@
-```lua
 -- Grok's Stealth WASD Controller Hub (Cool Black Design)
 -- 超コンパクトUI, WASD長押し移動 (PC対応強化), WA/SD高速クリック (0.5秒交互高速), スクロール可能
 local UserInputService = game:GetService("UserInputService")
