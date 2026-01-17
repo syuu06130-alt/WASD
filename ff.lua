@@ -1,5 +1,5 @@
--- Stealth WASD Controller Hub (Fixed Edition)
--- keypress/keyrelease使用で確実に動作
+-- Stealth WASD Controller Hub (Fixed Edition v2)
+-- WS/AD切り替え、0.1秒間隔、固定機能付き
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 
@@ -37,7 +37,7 @@ end
 -- メインフレーム
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 280, 0, 180)
+MainFrame.Size = UDim2.new(0, 280, 0, 220)
 MainFrame.Position = UDim2.new(0.5, -140, 0.1, 0)
 MainFrame.AnchorPoint = Vector2.new(0.5, 0)
 MainFrame.BackgroundColor3 = config.bgColor
@@ -131,7 +131,7 @@ createControlButton("−", UDim2.new(1, -32, 0.5, 0), function()
         if ContentFrame then ContentFrame.Visible = false end
     else
         TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {
-            Size = UDim2.new(0, 280, 0, 180)
+            Size = UDim2.new(0, 280, 0, 220)
         }):Play()
         if ContentFrame then ContentFrame.Visible = true end
     end
@@ -149,12 +149,14 @@ ContentFrame.Size = UDim2.new(1, -10, 1, -40)
 ContentFrame.Position = UDim2.new(0, 5, 0, 35)
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.ScrollBarThickness = 4
-ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 200)
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 450)
 ContentFrame.BorderSizePixel = 0
 ContentFrame.Parent = MainFrame
 
 -- 状態管理
 local wasdButtons = {}
+local fastClickButtons = {}
+local isDraggingLocked = false
 
 -- ドラッグ機能追加関数
 local function makeDraggable(frame)
@@ -162,6 +164,7 @@ local function makeDraggable(frame)
     local dragInput, dragStart, startPos
     
     frame.InputBegan:Connect(function(input)
+        if isDraggingLocked then return end
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
@@ -182,7 +185,7 @@ local function makeDraggable(frame)
     end)
     
     UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
+        if input == dragInput and dragging and not isDraggingLocked then
             local delta = input.Position - dragStart
             frame.Position = UDim2.new(
                 startPos.X.Scale,
@@ -194,9 +197,9 @@ local function makeDraggable(frame)
     end)
 end
 
--- WASDボタン作成関数（keypress/keyrelease使用 + ドラッグ可能）
+-- WASDボタン作成関数（サイズ縮小 + ドラッグ可能）
 local function createWASDButton(name, color, keyCode, posX, posY)
-    local size = UserInputService.TouchEnabled and 70 or 60
+    local size = UserInputService.TouchEnabled and 55 or 50  -- 小さくした
     
     local btn = Instance.new("TextButton")
     btn.Name = "WASD_" .. name
@@ -207,7 +210,7 @@ local function createWASDButton(name, color, keyCode, posX, posY)
     btn.Text = name
     btn.TextColor3 = config.textColor
     btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 28
+    btn.TextSize = 24
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
     btn.TextStrokeTransparency = 0.5
@@ -252,7 +255,6 @@ local function createWASDButton(name, color, keyCode, posX, posY)
             BackgroundColor3 = config.accentColor
         }):Play()
         
-        -- keypress実行
         pcall(function()
             keypress(keyCode)
         end)
@@ -267,7 +269,6 @@ local function createWASDButton(name, color, keyCode, posX, posY)
                 BackgroundColor3 = color
             }):Play()
             
-            -- keyrelease実行
             pcall(function()
                 keyrelease(keyCode)
             end)
@@ -296,10 +297,41 @@ local function createWASDButton(name, color, keyCode, posX, posY)
     return btn
 end
 
+-- 固定/解除ボタン
+local LockBtn = Instance.new("TextButton")
+LockBtn.Size = UDim2.new(0.9, 0, 0, 40)
+LockBtn.Position = UDim2.new(0.05, 0, 0, 10)
+LockBtn.Text = "🔓 Unlock All Buttons"
+LockBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 30)
+LockBtn.TextColor3 = Color3.fromRGB(255, 255, 150)
+LockBtn.Font = Enum.Font.GothamBold
+LockBtn.TextSize = 14
+LockBtn.BorderSizePixel = 0
+LockBtn.AutoButtonColor = false
+LockBtn.Parent = ContentFrame
+
+local LockCorner = Instance.new("UICorner")
+LockCorner.CornerRadius = UDim.new(0, 10)
+LockCorner.Parent = LockBtn
+
+LockBtn.MouseButton1Click:Connect(function()
+    isDraggingLocked = not isDraggingLocked
+    
+    if isDraggingLocked then
+        LockBtn.Text = "🔒 Lock All Buttons"
+        LockBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
+        LockBtn.TextColor3 = Color3.fromRGB(255, 150, 150)
+    else
+        LockBtn.Text = "🔓 Unlock All Buttons"
+        LockBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 30)
+        LockBtn.TextColor3 = Color3.fromRGB(255, 255, 150)
+    end
+end)
+
 -- WASDボタン生成
 local WASDGenBtn = Instance.new("TextButton")
 WASDGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
-WASDGenBtn.Position = UDim2.new(0.05, 0, 0, 10)
+WASDGenBtn.Position = UDim2.new(0.05, 0, 0, 60)
 WASDGenBtn.Text = "📱 Generate WASD Buttons"
 WASDGenBtn.BackgroundColor3 = config.buttonColor
 WASDGenBtn.TextColor3 = config.accentColor
@@ -323,7 +355,7 @@ WASDGenBtn.MouseButton1Click:Connect(function()
     -- 画面下部中央に十字配置
     local centerX = 0.5
     local centerY = 0.85
-    local spacing = 0.08
+    local spacing = 0.07  -- 少し詰めた
     
     wasdButtons.W = createWASDButton("W", Color3.fromRGB(70, 70, 150), Enum.KeyCode.W, centerX, centerY - spacing)
     wasdButtons.A = createWASDButton("A", Color3.fromRGB(70, 150, 70), Enum.KeyCode.A, centerX - spacing, centerY)
@@ -331,29 +363,29 @@ WASDGenBtn.MouseButton1Click:Connect(function()
     wasdButtons.D = createWASDButton("D", Color3.fromRGB(150, 150, 70), Enum.KeyCode.D, centerX + spacing, centerY)
 end)
 
--- WA高速クリック（トグル式 + ドラッグ可能）
-local WAGenBtn = Instance.new("TextButton")
-WAGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
-WAGenBtn.Position = UDim2.new(0.05, 0, 0, 60)
-WAGenBtn.Text = "⚡ Generate WA Fast Click"
-WAGenBtn.BackgroundColor3 = config.buttonColor
-WAGenBtn.TextColor3 = Color3.fromRGB(180, 255, 200)
-WAGenBtn.Font = Enum.Font.GothamBold
-WAGenBtn.TextSize = 14
-WAGenBtn.BorderSizePixel = 0
-WAGenBtn.AutoButtonColor = false
-WAGenBtn.Parent = ContentFrame
+-- WS高速クリック（0.1秒ずつトグル式）
+local WSGenBtn = Instance.new("TextButton")
+WSGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+WSGenBtn.Position = UDim2.new(0.05, 0, 0, 110)
+WSGenBtn.Text = "⚡ Generate WS Fast Click"
+WSGenBtn.BackgroundColor3 = config.buttonColor
+WSGenBtn.TextColor3 = Color3.fromRGB(180, 255, 200)
+WSGenBtn.Font = Enum.Font.GothamBold
+WSGenBtn.TextSize = 14
+WSGenBtn.BorderSizePixel = 0
+WSGenBtn.AutoButtonColor = false
+WSGenBtn.Parent = ContentFrame
 
-local WACorner = Instance.new("UICorner")
-WACorner.CornerRadius = UDim.new(0, 10)
-WACorner.Parent = WAGenBtn
+local WSCorner = Instance.new("UICorner")
+WSCorner.CornerRadius = UDim.new(0, 10)
+WSCorner.Parent = WSGenBtn
 
-WAGenBtn.MouseButton1Click:Connect(function()
+WSGenBtn.MouseButton1Click:Connect(function()
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 70, 0, 70)
     btn.Position = UDim2.new(0.1, -35, 0.7, -35)
     btn.BackgroundColor3 = Color3.fromRGB(100, 60, 120)
-    btn.Text = "WA\n⚡"
+    btn.Text = "WS\n⚡"
     btn.TextColor3 = config.textColor
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 20
@@ -367,67 +399,64 @@ WAGenBtn.MouseButton1Click:Connect(function()
     btnCorner.Parent = btn
     
     local isRunning = false
-    local loopThread = nil
     
     btn.MouseButton1Click:Connect(function()
         isRunning = not isRunning
         
         if isRunning then
             btn.BackgroundColor3 = config.accentColor
-            btn.Text = "WA\n■"
+            btn.Text = "WS\n■"
             
-            loopThread = coroutine.create(function()
+            spawn(function()
                 while isRunning do
-                    -- W を 0.3秒
+                    -- W を 0.1秒
                     pcall(function() keypress(Enum.KeyCode.W) end)
-                    wait(0.3)
+                    wait(0.1)
                     pcall(function() keyrelease(Enum.KeyCode.W) end)
                     
                     if not isRunning then break end
                     
-                    -- A を 0.3秒
-                    pcall(function() keypress(Enum.KeyCode.A) end)
-                    wait(0.3)
-                    pcall(function() keyrelease(Enum.KeyCode.A) end)
+                    -- S を 0.1秒
+                    pcall(function() keypress(Enum.KeyCode.S) end)
+                    wait(0.1)
+                    pcall(function() keyrelease(Enum.KeyCode.S) end)
                 end
             end)
-            coroutine.resume(loopThread)
         else
             btn.BackgroundColor3 = Color3.fromRGB(100, 60, 120)
-            btn.Text = "WA\n⚡"
-            -- 停止時に確実に離す
+            btn.Text = "WS\n⚡"
             pcall(function() keyrelease(Enum.KeyCode.W) end)
-            pcall(function() keyrelease(Enum.KeyCode.A) end)
+            pcall(function() keyrelease(Enum.KeyCode.S) end)
         end
     end)
     
-    -- ドラッグ可能
     makeDraggable(btn)
+    table.insert(fastClickButtons, btn)
 end)
 
--- SD高速クリック（トグル式 + ドラッグ可能）
-local SDGenBtn = Instance.new("TextButton")
-SDGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
-SDGenBtn.Position = UDim2.new(0.05, 0, 0, 110)
-SDGenBtn.Text = "⚡ Generate SD Fast Click"
-SDGenBtn.BackgroundColor3 = config.buttonColor
-SDGenBtn.TextColor3 = Color3.fromRGB(255, 180, 200)
-SDGenBtn.Font = Enum.Font.GothamBold
-SDGenBtn.TextSize = 14
-SDGenBtn.BorderSizePixel = 0
-SDGenBtn.AutoButtonColor = false
-SDGenBtn.Parent = ContentFrame
+-- AD高速クリック（0.1秒ずつトグル式）
+local ADGenBtn = Instance.new("TextButton")
+ADGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+ADGenBtn.Position = UDim2.new(0.05, 0, 0, 160)
+ADGenBtn.Text = "⚡ Generate AD Fast Click"
+ADGenBtn.BackgroundColor3 = config.buttonColor
+ADGenBtn.TextColor3 = Color3.fromRGB(255, 180, 200)
+ADGenBtn.Font = Enum.Font.GothamBold
+ADGenBtn.TextSize = 14
+ADGenBtn.BorderSizePixel = 0
+ADGenBtn.AutoButtonColor = false
+ADGenBtn.Parent = ContentFrame
 
-local SDCorner = Instance.new("UICorner")
-SDCorner.CornerRadius = UDim.new(0, 10)
-SDCorner.Parent = SDGenBtn
+local ADCorner = Instance.new("UICorner")
+ADCorner.CornerRadius = UDim.new(0, 10)
+ADCorner.Parent = ADGenBtn
 
-SDGenBtn.MouseButton1Click:Connect(function()
+ADGenBtn.MouseButton1Click:Connect(function()
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 70, 0, 70)
     btn.Position = UDim2.new(0.9, -35, 0.7, -35)
     btn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
-    btn.Text = "SD\n⚡"
+    btn.Text = "AD\n⚡"
     btn.TextColor3 = config.textColor
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 20
@@ -441,42 +470,39 @@ SDGenBtn.MouseButton1Click:Connect(function()
     btnCorner.Parent = btn
     
     local isRunning = false
-    local loopThread = nil
     
     btn.MouseButton1Click:Connect(function()
         isRunning = not isRunning
         
         if isRunning then
             btn.BackgroundColor3 = config.accentColor
-            btn.Text = "SD\n■"
+            btn.Text = "AD\n■"
             
-            loopThread = coroutine.create(function()
+            spawn(function()
                 while isRunning do
-                    -- S を 0.3秒
-                    pcall(function() keypress(Enum.KeyCode.S) end)
-                    wait(0.3)
-                    pcall(function() keyrelease(Enum.KeyCode.S) end)
+                    -- A を 0.1秒
+                    pcall(function() keypress(Enum.KeyCode.A) end)
+                    wait(0.1)
+                    pcall(function() keyrelease(Enum.KeyCode.A) end)
                     
                     if not isRunning then break end
                     
-                    -- D を 0.3秒
+                    -- D を 0.1秒
                     pcall(function() keypress(Enum.KeyCode.D) end)
-                    wait(0.3)
+                    wait(0.1)
                     pcall(function() keyrelease(Enum.KeyCode.D) end)
                 end
             end)
-            coroutine.resume(loopThread)
         else
             btn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
-            btn.Text = "SD\n⚡"
-            -- 停止時に確実に離す
-            pcall(function() keyrelease(Enum.KeyCode.S) end)
+            btn.Text = "AD\n⚡"
+            pcall(function() keyrelease(Enum.KeyCode.A) end)
             pcall(function() keyrelease(Enum.KeyCode.D) end)
         end
     end)
     
-    -- ドラッグ可能
     makeDraggable(btn)
+    table.insert(fastClickButtons, btn)
 end)
 
 -- UIドラッグ機能
@@ -515,7 +541,6 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
-print("✓ Stealth WASD Controller loaded successfully!")
-print("✓ Fixed: No walking when not pressing")
-print("✓ Toggle mode for fast clicks (0.3s each)")
-print("✓ All buttons are draggable")
+print("✓ Stealth WASD Controller loaded!")
+print("✓ WS/AD fast click (0.1s each)")
+print("✓ Lock/Unlock button dragging feature added")
