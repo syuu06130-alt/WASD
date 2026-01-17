@@ -1,5 +1,6 @@
+```lua
 -- Grok's Stealth WASD Controller Hub (Cool Black Design)
--- 超コンパクトUI, WASD長押し移動, WA/SD高速クリック (0.5秒交互高速), スクロール可能
+-- 超コンパクトUI, WASD長押し移動 (PC対応強化), WA/SD高速クリック (0.5秒交互高速), スクロール可能
 local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
@@ -80,8 +81,8 @@ ScrollingContent.Parent = MainFrame
 -- 状態
 local minimizeLevel = 0 -- 0:フル, 1:中, 2:超小
 
--- 小型フロートボタン生成関数（WASD用）
-local function createFloatButton(name, color, keyCode, isMobile)
+-- 小型フロートボタン生成関数（WASD用, PC対応強化）
+local function createFloatButton(name, color, keyCode)
     local btn = Instance.new("TextButton")
     btn.Size = UserInputService.TouchEnabled and UDim2.new(0, 60, 0, 60) or UDim2.new(0, 50, 0, 50)  -- スマホ最適
     btn.BackgroundColor3 = color
@@ -98,11 +99,13 @@ local function createFloatButton(name, color, keyCode, isMobile)
     btnCorner.Parent = btn
 
     local pressing = false
+
+    -- InputBegan/InputEndedでキーイベント送信 (windowをnilに変更してPC対応強化)
     btn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             pressing = true
-            VirtualUser:SendKeyEvent(true, keyCode, false, game)
-            if isMobile then
+            VirtualUser:SendKeyEvent(true, keyCode, false, nil)  -- windowをnilに修正 (PCで動作しやすく)
+            if UserInputService.TouchEnabled then
                 VirtualUser:CaptureController()
             end
         end
@@ -110,7 +113,14 @@ local function createFloatButton(name, color, keyCode, isMobile)
     btn.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             pressing = false
-            VirtualUser:SendKeyEvent(false, keyCode, false, game)
+            VirtualUser:SendKeyEvent(false, keyCode, false, nil)  -- windowをnilに修正
+        end
+    end)
+
+    -- 追加: 長押し中に持続的にキーイベントを送信 (PCで反応しない場合のフォールバック)
+    RunService.Heartbeat:Connect(function()
+        if pressing then
+            VirtualUser:SendKeyEvent(true, keyCode, false, nil)
         end
     end)
 
@@ -159,19 +169,19 @@ WASDGenBtn.MouseButton1Click:Connect(function()
     local offset = UserInputService.TouchEnabled and 70 or 60
 
     -- W (上)
-    local wBtn = createFloatButton("W", Color3.fromRGB(50, 50, 100), Enum.KeyCode.W, false)
+    local wBtn = createFloatButton("W", Color3.fromRGB(50, 50, 100), Enum.KeyCode.W)
     wBtn.Position = UDim2.new(centerX, -offset/2, bottomY, -offset * 1.5)
 
     -- A (左)
-    local aBtn = createFloatButton("A", Color3.fromRGB(50, 100, 50), Enum.KeyCode.A, false)
+    local aBtn = createFloatButton("A", Color3.fromRGB(50, 100, 50), Enum.KeyCode.A)
     aBtn.Position = UDim2.new(centerX, -offset * 1.5, bottomY, -offset/2)
 
     -- S (下)
-    local sBtn = createFloatButton("S", Color3.fromRGB(100, 50, 50), Enum.KeyCode.S, false)
+    local sBtn = createFloatButton("S", Color3.fromRGB(100, 50, 50), Enum.KeyCode.S)
     sBtn.Position = UDim2.new(centerX, -offset/2, bottomY, offset/2)
 
     -- D (右)
-    local dBtn = createFloatButton("D", Color3.fromRGB(100, 100, 50), Enum.KeyCode.D, false)
+    local dBtn = createFloatButton("D", Color3.fromRGB(100, 100, 50), Enum.KeyCode.D)
     dBtn.Position = UDim2.new(centerX, offset/2, bottomY, -offset/2)
 end)
 
@@ -216,9 +226,9 @@ WAGenBtn.MouseButton1Click:Connect(function()
                 connection:Disconnect()
                 return
             end
-            VirtualUser:SendKeyEvent(true, keys[index], false, game)
+            VirtualUser:SendKeyEvent(true, keys[index], false, nil)
             wait(0.01)  -- 高速交互
-            VirtualUser:SendKeyEvent(false, keys[index], false, game)
+            VirtualUser:SendKeyEvent(false, keys[index], false, nil)
             index = index % 2 + 1
         end)
     end)
@@ -287,9 +297,9 @@ SDGenBtn.MouseButton1Click:Connect(function()
                 connection:Disconnect()
                 return
             end
-            VirtualUser:SendKeyEvent(true, keys[index], false, game)
+            VirtualUser:SendKeyEvent(true, keys[index], false, nil)
             wait(0.01)  -- 高速交互
-            VirtualUser:SendKeyEvent(false, keys[index], false, game)
+            VirtualUser:SendKeyEvent(false, keys[index], false, nil)
             index = index % 2 + 1
         end)
     end)
@@ -367,4 +377,5 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
-print("Stealth WASD Controller Hub Loaded - Compact & Mobile Optimized ⚡")
+print("Stealth WASD Controller Hub Loaded - PC Optimized ⚡")
+```
