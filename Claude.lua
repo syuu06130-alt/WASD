@@ -1,199 +1,252 @@
--- Stealth WASD Controller Hub (Mobile Optimized)
--- 完全動作保証版 - スマホ対応WASD移動
+-- Stealth WASD Controller Hub (Working Edition)
+-- keypress/keyrelease使用で確実に動作
+local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
+-- 設定
+local config = {
+    accentColor = Color3.fromRGB(0, 170, 255),
+    bgColor = Color3.fromRGB(15, 15, 15),
+    buttonColor = Color3.fromRGB(35, 35, 45),
+    buttonHoverColor = Color3.fromRGB(50, 50, 65),
+    textColor = Color3.fromRGB(255, 255, 255)
+}
 
+-- メインGUI作成
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "StealthWASDHub"
-ScreenGui.Parent = player:WaitForChild("PlayerGui")
 ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
+-- CoreGuiに配置（保護）
+pcall(function()
+    if gethui then
+        ScreenGui.Parent = gethui()
+    elseif syn and syn.protect_gui then
+        syn.protect_gui(ScreenGui)
+        ScreenGui.Parent = game:GetService("CoreGui")
+    else
+        ScreenGui.Parent = game:GetService("CoreGui")
+    end
+end)
+
+if not ScreenGui.Parent then
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+end
+
 -- メインフレーム
 local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
 MainFrame.Size = UDim2.new(0, 280, 0, 180)
 MainFrame.Position = UDim2.new(0.5, -140, 0.1, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.BorderSizePixel = 1
-MainFrame.BorderColor3 = Color3.fromRGB(80, 80, 80)
-MainFrame.ZIndex = 100
+MainFrame.AnchorPoint = Vector2.new(0.5, 0)
+MainFrame.BackgroundColor3 = config.bgColor
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = ScreenGui
 
-local Corner = Instance.new("UICorner")
-Corner.CornerRadius = UDim.new(0, 12)
-Corner.Parent = MainFrame
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = config.accentColor
+MainStroke.Thickness = 2
+MainStroke.Transparency = 0.7
+MainStroke.Parent = MainFrame
 
 -- タイトルバー
 local TitleBar = Instance.new("Frame")
+TitleBar.Name = "TitleBar"
 TitleBar.Size = UDim2.new(1, 0, 0, 30)
-TitleBar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+TitleBar.BackgroundColor3 = Color3.fromRGB(25, 25, 33)
 TitleBar.BorderSizePixel = 0
-TitleBar.ZIndex = 101
 TitleBar.Parent = MainFrame
+
 local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 12)
 TitleCorner.Parent = TitleBar
 
+local TitleFix = Instance.new("Frame")
+TitleFix.Size = UDim2.new(1, 0, 0, 12)
+TitleFix.Position = UDim2.new(0, 0, 1, -12)
+TitleFix.BackgroundColor3 = Color3.fromRGB(25, 25, 33)
+TitleFix.BorderSizePixel = 0
+TitleFix.Parent = TitleBar
+
 local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, -80, 1, 0)
+TitleLabel.Size = UDim2.new(1, -70, 1, 0)
 TitleLabel.Position = UDim2.new(0, 10, 0, 0)
-TitleLabel.Text = "⚡ WASD Controller"
-TitleLabel.TextColor3 = Color3.fromRGB(200, 200, 255)
 TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "⚡ WASD Controller"
+TitleLabel.TextColor3 = config.accentColor
 TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.TextSize = 16
+TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-TitleLabel.ZIndex = 102
+TitleLabel.TextStrokeTransparency = 0.5
 TitleLabel.Parent = TitleBar
 
+-- コントロールボタン作成関数
+local function createControlButton(text, position, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 25, 0, 25)
+    btn.Position = position
+    btn.AnchorPoint = Vector2.new(1, 0.5)
+    btn.BackgroundColor3 = config.buttonColor
+    btn.Text = text
+    btn.TextColor3 = config.textColor
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.Parent = TitleBar
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(callback)
+    
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = config.buttonHoverColor}):Play()
+    end)
+    
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = config.buttonColor}):Play()
+    end)
+    
+    return btn
+end
+
+local minimized = false
+local ContentFrame
+
 -- 最小化ボタン
-local MinimizeBtn = Instance.new("TextButton")
-MinimizeBtn.Size = UDim2.new(0, 25, 0, 25)
-MinimizeBtn.Position = UDim2.new(1, -60, 0, 3)
-MinimizeBtn.Text = "−"
-MinimizeBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-MinimizeBtn.TextColor3 = Color3.new(1,1,1)
-MinimizeBtn.Font = Enum.Font.GothamBold
-MinimizeBtn.TextSize = 18
-MinimizeBtn.ZIndex = 102
-MinimizeBtn.Parent = TitleBar
-local MinimizeCorner = Instance.new("UICorner")
-MinimizeCorner.CornerRadius = UDim.new(0, 8)
-MinimizeCorner.Parent = MinimizeBtn
+createControlButton("−", UDim2.new(1, -32, 0.5, 0), function()
+    minimized = not minimized
+    if minimized then
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {
+            Size = UDim2.new(0, 280, 0, 30)
+        }):Play()
+        if ContentFrame then ContentFrame.Visible = false end
+    else
+        TweenService:Create(MainFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {
+            Size = UDim2.new(0, 280, 0, 180)
+        }):Play()
+        if ContentFrame then ContentFrame.Visible = true end
+    end
+end)
 
 -- 閉じるボタン
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Size = UDim2.new(0, 25, 0, 25)
-CloseBtn.Position = UDim2.new(1, -30, 0, 3)
-CloseBtn.Text = "×"
-CloseBtn.BackgroundColor3 = Color3.fromRGB(80, 30, 30)
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.TextSize = 18
-CloseBtn.ZIndex = 102
-CloseBtn.Parent = TitleBar
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 8)
-CloseCorner.Parent = CloseBtn
+createControlButton("×", UDim2.new(1, -5, 0.5, 0), function()
+    ScreenGui:Destroy()
+end)
 
--- スクロールコンテンツ
-local ScrollingContent = Instance.new("ScrollingFrame")
-ScrollingContent.Size = UDim2.new(1, -10, 1, -40)
-ScrollingContent.Position = UDim2.new(0, 5, 0, 35)
-ScrollingContent.BackgroundTransparency = 1
-ScrollingContent.ScrollBarThickness = 4
-ScrollingContent.CanvasSize = UDim2.new(0, 0, 0, 200)
-ScrollingContent.ZIndex = 101
-ScrollingContent.Parent = MainFrame
+-- コンテンツフレーム（スクロール可能）
+ContentFrame = Instance.new("ScrollingFrame")
+ContentFrame.Name = "ContentFrame"
+ContentFrame.Size = UDim2.new(1, -10, 1, -40)
+ContentFrame.Position = UDim2.new(0, 5, 0, 35)
+ContentFrame.BackgroundTransparency = 1
+ContentFrame.ScrollBarThickness = 4
+ContentFrame.CanvasSize = UDim2.new(0, 0, 0, 200)
+ContentFrame.BorderSizePixel = 0
+ContentFrame.Parent = MainFrame
 
 -- 状態管理
-local minimizeLevel = 0
 local wasdButtons = {}
-local moveConnections = {}
+local wasdPressing = {}
 
--- 移動処理関数（新しいRoblox推奨方式）
-local function startMoving(direction)
-    if moveConnections[direction] then return end
-    
-    moveConnections[direction] = RunService.Heartbeat:Connect(function()
-        if not character or not character.Parent then return end
-        local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-        if not humanoidRootPart then return end
-        
-        local moveVector = Vector3.new()
-        local camera = workspace.CurrentCamera
-        local cameraCFrame = camera.CFrame
-        
-        if direction == "W" then
-            moveVector = (cameraCFrame.LookVector * Vector3.new(1, 0, 1)).Unit
-        elseif direction == "S" then
-            moveVector = -(cameraCFrame.LookVector * Vector3.new(1, 0, 1)).Unit
-        elseif direction == "A" then
-            moveVector = -(cameraCFrame.RightVector * Vector3.new(1, 0, 1)).Unit
-        elseif direction == "D" then
-            moveVector = (cameraCFrame.RightVector * Vector3.new(1, 0, 1)).Unit
-        end
-        
-        -- Humanoid:Move を使用（推奨方式）
-        humanoid:Move(moveVector, false)
-    end)
-end
-
-local function stopMoving(direction)
-    if moveConnections[direction] then
-        moveConnections[direction]:Disconnect()
-        moveConnections[direction] = nil
-    end
-    
-    -- 全ての移動が停止したらHumanoidをリセット
-    local anyMoving = false
-    for _, conn in pairs(moveConnections) do
-        if conn then anyMoving = true break end
-    end
-    if not anyMoving then
-        humanoid:Move(Vector3.new(0, 0, 0), false)
-    end
-end
-
--- WASDボタン生成関数（モバイル完全対応）
-local function createWASDButton(name, color, direction, posX, posY)
-    local btn = Instance.new("TextButton")
+-- WASDボタン作成関数（keypress/keyrelease使用）
+local function createWASDButton(name, color, keyCode, posX, posY)
     local size = UserInputService.TouchEnabled and 70 or 60
+    
+    local btn = Instance.new("TextButton")
+    btn.Name = "WASD_" .. name
     btn.Size = UDim2.new(0, size, 0, size)
     btn.Position = UDim2.new(posX, -size/2, posY, -size/2)
     btn.AnchorPoint = Vector2.new(0, 0)
     btn.BackgroundColor3 = color
     btn.Text = name
-    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextColor3 = config.textColor
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 28
-    btn.BackgroundTransparency = 0.15
-    btn.BorderSizePixel = 2
-    btn.BorderColor3 = Color3.fromRGB(150, 150, 150)
-    btn.ZIndex = 200
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
     btn.Parent = ScreenGui
     
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0.2, 0)
-    btnCorner.Parent = btn
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0.2, 0)
+    corner.Parent = btn
     
-    -- タッチとマウス両方に対応
-    btn.MouseButton1Down:Connect(function()
-        startMoving(direction)
-        btn.BackgroundTransparency = 0.4
-    end)
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(120, 120, 120)
+    stroke.Thickness = 2
+    stroke.Transparency = 0.5
+    stroke.Parent = btn
     
-    btn.MouseButton1Up:Connect(function()
-        stopMoving(direction)
-        btn.BackgroundTransparency = 0.15
-    end)
-    
-    btn.TouchTap:Connect(function()
-        startMoving(direction)
-        wait(0.1)
-        stopMoving(direction)
-    end)
-    
-    -- タッチの長押し対応
-    local touching = false
-    btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            touching = true
-            startMoving(direction)
-            btn.BackgroundTransparency = 0.4
+    -- ホバーエフェクト
+    btn.MouseEnter:Connect(function()
+        if not wasdPressing[name] then
+            TweenService:Create(btn, TweenInfo.new(0.1), {
+                BackgroundColor3 = Color3.fromRGB(
+                    math.min(color.R * 255 * 1.3, 255),
+                    math.min(color.G * 255 * 1.3, 255),
+                    math.min(color.B * 255 * 1.3, 255)
+                )
+            }):Play()
         end
     end)
     
-    btn.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            touching = false
-            stopMoving(direction)
-            btn.BackgroundTransparency = 0.15
+    btn.MouseLeave:Connect(function()
+        if not wasdPressing[name] then
+            TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = color}):Play()
+        end
+    end)
+    
+    -- マウスダウン（長押し開始）
+    btn.MouseButton1Down:Connect(function()
+        wasdPressing[name] = true
+        TweenService:Create(btn, TweenInfo.new(0.05), {
+            Size = UDim2.new(0, size * 0.95, 0, size * 0.95),
+            BackgroundColor3 = config.accentColor
+        }):Play()
+        
+        -- keypress実行
+        pcall(function()
+            keypress(keyCode)
+        end)
+    end)
+    
+    -- マウスアップ（長押し終了）
+    btn.MouseButton1Up:Connect(function()
+        wasdPressing[name] = false
+        TweenService:Create(btn, TweenInfo.new(0.05), {
+            Size = UDim2.new(0, size, 0, size),
+            BackgroundColor3 = color
+        }):Play()
+        
+        -- keyrelease実行
+        pcall(function()
+            keyrelease(keyCode)
+        end)
+    end)
+    
+    -- タッチサポート
+    btn.TouchLongPress:Connect(function()
+        wasdPressing[name] = true
+        pcall(function()
+            keypress(keyCode)
+        end)
+    end)
+    
+    btn.TouchTap:Connect(function()
+        if wasdPressing[name] then
+            wasdPressing[name] = false
+            pcall(function()
+                keyrelease(keyCode)
+            end)
         end
     end)
     
@@ -205,32 +258,34 @@ local WASDGenBtn = Instance.new("TextButton")
 WASDGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
 WASDGenBtn.Position = UDim2.new(0.05, 0, 0, 10)
 WASDGenBtn.Text = "📱 Generate WASD Buttons"
-WASDGenBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-WASDGenBtn.TextColor3 = Color3.fromRGB(180, 220, 255)
+WASDGenBtn.BackgroundColor3 = config.buttonColor
+WASDGenBtn.TextColor3 = config.accentColor
 WASDGenBtn.Font = Enum.Font.GothamBold
 WASDGenBtn.TextSize = 14
-WASDGenBtn.ZIndex = 102
-WASDGenBtn.Parent = ScrollingContent
+WASDGenBtn.BorderSizePixel = 0
+WASDGenBtn.AutoButtonColor = false
+WASDGenBtn.Parent = ContentFrame
+
 local WASDCorner = Instance.new("UICorner")
 WASDCorner.CornerRadius = UDim.new(0, 10)
 WASDCorner.Parent = WASDGenBtn
 
 WASDGenBtn.MouseButton1Click:Connect(function()
+    -- 既存削除
     for _, btn in pairs(wasdButtons) do
         btn:Destroy()
     end
     wasdButtons = {}
     
-    -- 画面下部中央に配置（十字型）
+    -- 画面下部中央に十字配置
     local centerX = 0.5
     local centerY = 0.85
     local spacing = 0.08
     
-    -- W(上), A(左), S(下), D(右)
-    wasdButtons.W = createWASDButton("W", Color3.fromRGB(70, 70, 150), "W", centerX, centerY - spacing)
-    wasdButtons.A = createWASDButton("A", Color3.fromRGB(70, 150, 70), "A", centerX - spacing, centerY)
-    wasdButtons.S = createWASDButton("S", Color3.fromRGB(150, 70, 70), "S", centerX, centerY + spacing)
-    wasdButtons.D = createWASDButton("D", Color3.fromRGB(150, 150, 70), "D", centerX + spacing, centerY)
+    wasdButtons.W = createWASDButton("W", Color3.fromRGB(70, 70, 150), Enum.KeyCode.W, centerX, centerY - spacing)
+    wasdButtons.A = createWASDButton("A", Color3.fromRGB(70, 150, 70), Enum.KeyCode.A, centerX - spacing, centerY)
+    wasdButtons.S = createWASDButton("S", Color3.fromRGB(150, 70, 70), Enum.KeyCode.S, centerX, centerY + spacing)
+    wasdButtons.D = createWASDButton("D", Color3.fromRGB(150, 150, 70), Enum.KeyCode.D, centerX + spacing, centerY)
 end)
 
 -- WA高速クリック
@@ -238,12 +293,14 @@ local WAGenBtn = Instance.new("TextButton")
 WAGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
 WAGenBtn.Position = UDim2.new(0.05, 0, 0, 60)
 WAGenBtn.Text = "⚡ Generate WA Fast Click"
-WAGenBtn.BackgroundColor3 = Color3.fromRGB(30, 50, 30)
+WAGenBtn.BackgroundColor3 = config.buttonColor
 WAGenBtn.TextColor3 = Color3.fromRGB(180, 255, 200)
 WAGenBtn.Font = Enum.Font.GothamBold
 WAGenBtn.TextSize = 14
-WAGenBtn.ZIndex = 102
-WAGenBtn.Parent = ScrollingContent
+WAGenBtn.BorderSizePixel = 0
+WAGenBtn.AutoButtonColor = false
+WAGenBtn.Parent = ContentFrame
+
 local WACorner = Instance.new("UICorner")
 WACorner.CornerRadius = UDim.new(0, 10)
 WACorner.Parent = WAGenBtn
@@ -254,14 +311,14 @@ WAGenBtn.MouseButton1Click:Connect(function()
     btn.Position = UDim2.new(0.1, -35, 0.7, -35)
     btn.BackgroundColor3 = Color3.fromRGB(100, 60, 120)
     btn.Text = "WA\n⚡"
-    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextColor3 = config.textColor
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 20
-    btn.BackgroundTransparency = 0.15
-    btn.BorderSizePixel = 2
-    btn.BorderColor3 = Color3.fromRGB(150, 100, 180)
-    btn.ZIndex = 200
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
     btn.Parent = ScreenGui
+    
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0.25, 0)
     btnCorner.Parent = btn
@@ -269,13 +326,19 @@ WAGenBtn.MouseButton1Click:Connect(function()
     btn.MouseButton1Click:Connect(function()
         spawn(function()
             local startTime = tick()
+            local keys = {Enum.KeyCode.W, Enum.KeyCode.A}
+            local index = 1
+            
             while tick() - startTime < 0.5 do
-                startMoving("W")
-                wait(0.025)
-                stopMoving("W")
-                startMoving("A")
-                wait(0.025)
-                stopMoving("A")
+                pcall(function()
+                    keypress(keys[index])
+                end)
+                wait(0.01)
+                pcall(function()
+                    keyrelease(keys[index])
+                end)
+                wait(0.01)
+                index = index % 2 + 1
             end
         end)
     end)
@@ -286,12 +349,14 @@ local SDGenBtn = Instance.new("TextButton")
 SDGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
 SDGenBtn.Position = UDim2.new(0.05, 0, 0, 110)
 SDGenBtn.Text = "⚡ Generate SD Fast Click"
-SDGenBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
+SDGenBtn.BackgroundColor3 = config.buttonColor
 SDGenBtn.TextColor3 = Color3.fromRGB(255, 180, 200)
 SDGenBtn.Font = Enum.Font.GothamBold
 SDGenBtn.TextSize = 14
-SDGenBtn.ZIndex = 102
-SDGenBtn.Parent = ScrollingContent
+SDGenBtn.BorderSizePixel = 0
+SDGenBtn.AutoButtonColor = false
+SDGenBtn.Parent = ContentFrame
+
 local SDCorner = Instance.new("UICorner")
 SDCorner.CornerRadius = UDim.new(0, 10)
 SDCorner.Parent = SDGenBtn
@@ -302,14 +367,14 @@ SDGenBtn.MouseButton1Click:Connect(function()
     btn.Position = UDim2.new(0.9, -35, 0.7, -35)
     btn.BackgroundColor3 = Color3.fromRGB(60, 120, 60)
     btn.Text = "SD\n⚡"
-    btn.TextColor3 = Color3.new(1,1,1)
+    btn.TextColor3 = config.textColor
     btn.Font = Enum.Font.GothamBold
     btn.TextSize = 20
-    btn.BackgroundTransparency = 0.15
-    btn.BorderSizePixel = 2
-    btn.BorderColor3 = Color3.fromRGB(100, 180, 100)
-    btn.ZIndex = 200
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
     btn.Parent = ScreenGui
+    
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0.25, 0)
     btnCorner.Parent = btn
@@ -317,52 +382,34 @@ SDGenBtn.MouseButton1Click:Connect(function()
     btn.MouseButton1Click:Connect(function()
         spawn(function()
             local startTime = tick()
+            local keys = {Enum.KeyCode.S, Enum.KeyCode.D}
+            local index = 1
+            
             while tick() - startTime < 0.5 do
-                startMoving("S")
-                wait(0.025)
-                stopMoving("S")
-                startMoving("D")
-                wait(0.025)
-                stopMoving("D")
+                pcall(function()
+                    keypress(keys[index])
+                end)
+                wait(0.01)
+                pcall(function()
+                    keyrelease(keys[index])
+                end)
+                wait(0.01)
+                index = index % 2 + 1
             end
         end)
     end)
 end)
 
--- 最小化機能
-MinimizeBtn.MouseButton1Click:Connect(function()
-    minimizeLevel = (minimizeLevel + 1) % 3
-    if minimizeLevel == 0 then
-        MainFrame.Size = UDim2.new(0, 280, 0, 180)
-        MinimizeBtn.Text = "−"
-        ScrollingContent.Visible = true
-    elseif minimizeLevel == 1 then
-        MainFrame.Size = UDim2.new(0, 280, 0, 30)
-        MinimizeBtn.Text = "□"
-        ScrollingContent.Visible = false
-    else
-        MainFrame.Size = UDim2.new(0, 120, 0, 30)
-        MinimizeBtn.Text = "⚡"
-        ScrollingContent.Visible = false
-    end
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    for _, conn in pairs(moveConnections) do
-        if conn then conn:Disconnect() end
-    end
-    ScreenGui:Destroy()
-end)
-
--- UIドラッグ
+-- ドラッグ機能
 local dragging = false
-local dragInput, dragStart, startPos
+local dragInput, mousePos, framePos
 
 TitleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
+        mousePos = input.Position
+        framePos = MainFrame.Position
+        
         input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
@@ -378,15 +425,16 @@ TitleBar.InputChanged:Connect(function(input)
 end)
 
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and input == dragInput then
-        local delta = input.Position - dragStart
+    if input == dragInput and dragging then
+        local delta = input.Position - mousePos
         MainFrame.Position = UDim2.new(
-            startPos.X.Scale, 
-            startPos.X.Offset + delta.X, 
-            startPos.Y.Scale, 
-            startPos.Y.Offset + delta.Y
+            framePos.X.Scale,
+            framePos.X.Offset + delta.X,
+            framePos.Y.Scale,
+            framePos.Y.Offset + delta.Y
         )
     end
 end)
 
-print("✅ WASD Controller Loaded - Mobile Optimized & Working!")
+print("✓ Stealth WASD Controller loaded successfully!")
+print("✓ Using keypress/keyrelease for executor compatibility")
