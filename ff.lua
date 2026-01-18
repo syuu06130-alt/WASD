@@ -505,6 +505,312 @@ ADGenBtn.MouseButton1Click:Connect(function()
     table.insert(fastClickButtons, btn)
 end)
 
+-- スペースボタン生成
+local SpaceGenBtn = Instance.new("TextButton")
+SpaceGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+SpaceGenBtn.Position = UDim2.new(0.05, 0, 0, 210)
+SpaceGenBtn.Text = "⬜ Generate Space Button"
+SpaceGenBtn.BackgroundColor3 = config.buttonColor
+SpaceGenBtn.TextColor3 = Color3.fromRGB(200, 200, 255)
+SpaceGenBtn.Font = Enum.Font.GothamBold
+SpaceGenBtn.TextSize = 14
+SpaceGenBtn.BorderSizePixel = 0
+SpaceGenBtn.AutoButtonColor = false
+SpaceGenBtn.Parent = ContentFrame
+
+local SpaceCorner = Instance.new("UICorner")
+SpaceCorner.CornerRadius = UDim.new(0, 10)
+SpaceCorner.Parent = SpaceGenBtn
+
+SpaceGenBtn.MouseButton1Click:Connect(function()
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 120, 0, 60)
+    btn.Position = UDim2.new(0.5, -60, 0.92, -30)
+    btn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+    btn.Text = "SPACE"
+    btn.TextColor3 = config.textColor
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 18
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
+    btn.Parent = ScreenGui
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.2, 0)
+    btnCorner.Parent = btn
+    
+    local isPressing = false
+    
+    btn.MouseButton1Down:Connect(function()
+        isPressing = true
+        btn.BackgroundColor3 = config.accentColor
+        pcall(function() keypress(Enum.KeyCode.Space) end)
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        if isPressing then
+            isPressing = false
+            btn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+            pcall(function() keyrelease(Enum.KeyCode.Space) end)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if isPressing then
+                isPressing = false
+                btn.BackgroundColor3 = Color3.fromRGB(80, 80, 120)
+                pcall(function() keyrelease(Enum.KeyCode.Space) end)
+            end
+        end
+    end)
+    
+    makeDraggable(btn)
+end)
+
+-- 左クリック（マウスボタン1）生成
+local ClickGenBtn = Instance.new("TextButton")
+ClickGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+ClickGenBtn.Position = UDim2.new(0.05, 0, 0, 260)
+ClickGenBtn.Text = "🖱️ Generate Left Click"
+ClickGenBtn.BackgroundColor3 = config.buttonColor
+ClickGenBtn.TextColor3 = Color3.fromRGB(255, 200, 200)
+ClickGenBtn.Font = Enum.Font.GothamBold
+ClickGenBtn.TextSize = 14
+ClickGenBtn.BorderSizePixel = 0
+ClickGenBtn.AutoButtonColor = false
+ClickGenBtn.Parent = ContentFrame
+
+local ClickCorner = Instance.new("UICorner")
+ClickCorner.CornerRadius = UDim.new(0, 10)
+ClickCorner.Parent = ClickGenBtn
+
+ClickGenBtn.MouseButton1Click:Connect(function()
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 70, 0, 70)
+    btn.Position = UDim2.new(0.85, -35, 0.5, -35)
+    btn.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+    btn.Text = "🖱️\nClick"
+    btn.TextColor3 = config.textColor
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 18
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
+    btn.Parent = ScreenGui
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.25, 0)
+    btnCorner.Parent = btn
+    
+    btn.MouseButton1Click:Connect(function()
+        -- 単発クリック
+        pcall(function()
+            mouse1click()
+        end)
+        
+        -- エフェクト
+        btn.BackgroundColor3 = config.accentColor
+        wait(0.1)
+        btn.BackgroundColor3 = Color3.fromRGB(120, 60, 60)
+    end)
+    
+    makeDraggable(btn)
+end)
+
+-- Shiftボタン生成
+local ShiftGenBtn = Instance.new("TextButton")
+ShiftGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+ShiftGenBtn.Position = UDim2.new(0.05, 0, 0, 310)
+ShiftGenBtn.Text = "⬆️ Generate Shift Button"
+ShiftGenBtn.BackgroundColor3 = config.buttonColor
+ShiftGenBtn.TextColor3 = Color3.fromRGB(200, 255, 200)
+ShiftGenBtn.Font = Enum.Font.GothamBold
+ShiftGenBtn.TextSize = 14
+ShiftGenBtn.BorderSizePixel = 0
+ShiftGenBtn.AutoButtonColor = false
+ShiftGenBtn.Parent = ContentFrame
+
+local ShiftCorner = Instance.new("UICorner")
+ShiftCorner.CornerRadius = UDim.new(0, 10)
+ShiftCorner.Parent = ShiftGenBtn
+
+ShiftGenBtn.MouseButton1Click:Connect(function()
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 70, 0, 70)
+    btn.Position = UDim2.new(0.15, -35, 0.5, -35)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 100, 80)
+    btn.Text = "SHIFT"
+    btn.TextColor3 = config.textColor
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
+    btn.Parent = ScreenGui
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.25, 0)
+    btnCorner.Parent = btn
+    
+    local isPressing = false
+    
+    btn.MouseButton1Down:Connect(function()
+        isPressing = true
+        btn.BackgroundColor3 = config.accentColor
+        pcall(function() keypress(Enum.KeyCode.LeftShift) end)
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        if isPressing then
+            isPressing = false
+            btn.BackgroundColor3 = Color3.fromRGB(60, 100, 80)
+            pcall(function() keyrelease(Enum.KeyCode.LeftShift) end)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if isPressing then
+                isPressing = false
+                btn.BackgroundColor3 = Color3.fromRGB(60, 100, 80)
+                pcall(function() keyrelease(Enum.KeyCode.LeftShift) end)
+            end
+        end
+    end)
+    
+    makeDraggable(btn)
+end)
+
+-- Ctrlボタン生成
+local CtrlGenBtn = Instance.new("TextButton")
+CtrlGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+CtrlGenBtn.Position = UDim2.new(0.05, 0, 0, 360)
+CtrlGenBtn.Text = "⌨️ Generate Ctrl Button"
+CtrlGenBtn.BackgroundColor3 = config.buttonColor
+CtrlGenBtn.TextColor3 = Color3.fromRGB(255, 220, 180)
+CtrlGenBtn.Font = Enum.Font.GothamBold
+CtrlGenBtn.TextSize = 14
+CtrlGenBtn.BorderSizePixel = 0
+CtrlGenBtn.AutoButtonColor = false
+CtrlGenBtn.Parent = ContentFrame
+
+local CtrlCorner = Instance.new("UICorner")
+CtrlCorner.CornerRadius = UDim.new(0, 10)
+CtrlCorner.Parent = CtrlGenBtn
+
+CtrlGenBtn.MouseButton1Click:Connect(function()
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 70, 0, 70)
+    btn.Position = UDim2.new(0.15, -35, 0.6, -35)
+    btn.BackgroundColor3 = Color3.fromRGB(100, 80, 60)
+    btn.Text = "CTRL"
+    btn.TextColor3 = config.textColor
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
+    btn.Parent = ScreenGui
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.25, 0)
+    btnCorner.Parent = btn
+    
+    local isPressing = false
+    
+    btn.MouseButton1Down:Connect(function()
+        isPressing = true
+        btn.BackgroundColor3 = config.accentColor
+        pcall(function() keypress(Enum.KeyCode.LeftControl) end)
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        if isPressing then
+            isPressing = false
+            btn.BackgroundColor3 = Color3.fromRGB(100, 80, 60)
+            pcall(function() keyrelease(Enum.KeyCode.LeftControl) end)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if isPressing then
+                isPressing = false
+                btn.BackgroundColor3 = Color3.fromRGB(100, 80, 60)
+                pcall(function() keyrelease(Enum.KeyCode.LeftControl) end)
+            end
+        end
+    end)
+    
+    makeDraggable(btn)
+end)
+
+-- Eボタン生成（インタラクト用）
+local EGenBtn = Instance.new("TextButton")
+EGenBtn.Size = UDim2.new(0.9, 0, 0, 40)
+EGenBtn.Position = UDim2.new(0.05, 0, 0, 410)
+EGenBtn.Text = "🔧 Generate E Button (Interact)"
+EGenBtn.BackgroundColor3 = config.buttonColor
+EGenBtn.TextColor3 = Color3.fromRGB(180, 255, 255)
+EGenBtn.Font = Enum.Font.GothamBold
+EGenBtn.TextSize = 14
+EGenBtn.BorderSizePixel = 0
+EGenBtn.AutoButtonColor = false
+EGenBtn.Parent = ContentFrame
+
+local ECorner = Instance.new("UICorner")
+ECorner.CornerRadius = UDim.new(0, 10)
+ECorner.Parent = EGenBtn
+
+EGenBtn.MouseButton1Click:Connect(function()
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 60, 0, 60)
+    btn.Position = UDim2.new(0.5, 50, 0.7, -30)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 120, 120)
+    btn.Text = "E"
+    btn.TextColor3 = config.textColor
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 28
+    btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false
+    btn.TextStrokeTransparency = 0.5
+    btn.Parent = ScreenGui
+    
+    local btnCorner = Instance.new("UICorner")
+    btnCorner.CornerRadius = UDim.new(0.2, 0)
+    btnCorner.Parent = btn
+    
+    local isPressing = false
+    
+    btn.MouseButton1Down:Connect(function()
+        isPressing = true
+        btn.BackgroundColor3 = config.accentColor
+        pcall(function() keypress(Enum.KeyCode.E) end)
+    end)
+    
+    btn.MouseButton1Up:Connect(function()
+        if isPressing then
+            isPressing = false
+            btn.BackgroundColor3 = Color3.fromRGB(60, 120, 120)
+            pcall(function() keyrelease(Enum.KeyCode.E) end)
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if isPressing then
+                isPressing = false
+                btn.BackgroundColor3 = Color3.fromRGB(60, 120, 120)
+                pcall(function() keyrelease(Enum.KeyCode.E) end)
+            end
+        end
+    end)
+    
+    makeDraggable(btn)
+end)
+
 -- UIドラッグ機能
 local dragging = false
 local dragInput, mousePos, framePos
@@ -544,3 +850,4 @@ end)
 print("✓ Stealth WASD Controller loaded!")
 print("✓ WS/AD fast click (0.1s each)")
 print("✓ Lock/Unlock button dragging feature added")
+print("✓ Space, Click, Shift, Ctrl, E buttons added")
